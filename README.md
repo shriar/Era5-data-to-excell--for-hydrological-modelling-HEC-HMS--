@@ -18,3 +18,4 @@ This line may need to be changed according to your basin shape file. See the att
 - shapely
 - pandas
 - geopandas
+- xlsxwriter
