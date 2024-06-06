@@ -1,4 +1,3 @@
-# %%
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,7 +5,6 @@ from shapely.geometry import Polygon
 import pandas as pd
 import geopandas as gpd
 
-# %%
 class Extracting_ERA5Data():
     def __init__(self, path_nc, path_basin):
         self.ds = xr.open_dataset(path_nc, decode_times=True)
@@ -41,7 +39,7 @@ class Extracting_ERA5Data():
         for geometry in self.geometries:
             if geometry.geom_type == 'Polygon':
                 points_one_polygon = np.array(geometry.exterior.coords[:])
-                self.number_of_points_in_each_polygon.append(len(points_one_polygon))
+                number_of_points_in_each_polygon.append(len(points_one_polygon))
                 points_of_shape_file = np.concatenate((points_of_shape_file, points_one_polygon), axis=0)
                 
             elif geometry.geom_type == 'MultiPolygon':
@@ -49,12 +47,12 @@ class Extracting_ERA5Data():
                 for polygon in geometry.geoms:
                     points_one_polygon = np.array(polygon.exterior.coords[:])
                     # number_points_multi_polygon.append(len(points_one_polygon))
-                    points_of_shape_file = np.concatenate((self.points_of_shape_file, points_one_polygon), axis=0)
+                    points_of_shape_file = np.concatenate((points_of_shape_file, points_one_polygon), axis=0)
 
                     number_of_points_in_each_polygon.append(len(points_one_polygon))
                     # number_of_points_in_each_polygon.append(sum(number_points_multi_polygon))
 
-        number_of_points_in_each_polygon = [sum(self.number_of_points_in_each_polygon[:i+1]) for i in range(len(self.number_of_points_in_each_polygon))]  # cumulative sum
+        number_of_points_in_each_polygon = [sum(number_of_points_in_each_polygon[:i+1]) for i in range(len(number_of_points_in_each_polygon))]  # cumulative sum
         return number_of_points_in_each_polygon, points_of_shape_file
     
     # creating rectangle around the data points
@@ -151,20 +149,21 @@ class Extracting_ERA5Data():
     def create_plot(self, n_point=None, n_subBasin =None):
         rects = self.create_rect_around_c_data()
         number_of_points_in_each_polygon, points_of_shape_file = self.extract_points_of_basins()
+        lat_long = self.find_center_of_data_grid()
         
         plt.figure(figsize=(10,  5))
         plt.xlabel('Longitude')
         plt.ylabel('Latitude')
         if n_point != None:
             # plotting of the data points
-            x, y = self.lat_long[n_point[0], n_point[0], 0], self.lat_long[n_point[1], n_point[1], 1]
+            x, y = lat_long[n_point[0], n_point[0], 0], lat_long[n_point[1], n_point[1], 1]
             plt.scatter(x, y)
             # plotting of the rectangles
             x, y = rects[n_point[0], n_point[0], :, 0], rects[n_point[1], n_point[1], :, 1]
             plt.scatter(x, y)
         else:
             # plotting of the data points
-            x, y = self.lat_long[:, :, 0], self.lat_long[:, :, 1]
+            x, y = lat_long[:, :, 0], lat_long[:, :, 1]
             plt.scatter(x, y)
             # plotting of the rectangles
             x, y = rects[:, :, :, 0], rects[:, :, :, 1]
@@ -193,93 +192,3 @@ class Extracting_ERA5Data():
                         )
         plt.legend()
         plt.show()
-
-# %% [markdown]
-# # Extracting variable to dataframe
-
-# %%
-# Evaporation and Precipitation  -- -- 
-test1 = Extracting_ERA5Data(
-    r"G:\Pre-years\L4T1\HEC-HMS\Hec-Hms Project\parameter\17-20.nc",  # location of netcdf file
-    r"G:\Pre-years\L4T1\HEC-HMS\Hec-Hms Project\parameter\Sub-Basin-Corrected\Sub_basin(WGS)_2.shp" # location of basin shape file 
-)
-
-# test1 = Extracting_ERA5Data(
-#     r"C:\Users\User\Desktop\adaptor.mars.internal-1708580602.114361-8483-1-29260f78-811e-42bb-9a0c-a272ad7b36c0 2.nc",  # location of netcdf file
-#     r"C:\Users\User\Desktop\validshapefile 4\New folder\test2.shp" # location of basin shape file 
-# )
-
-tp = test1.extract_variable('tp')
-t2m = test1.extract_by_avering('t2m')
-e = test1.extract_variable('e')
-
-# %% [markdown]
-# # For combining multiple variable in one excel
-
-# %%
-# for combining multiple variable in one excell
-with pd.ExcelWriter('output2.xlsx') as writer:
-    tp.to_excel(writer, sheet_name='tp', index=False)
-    t2m.to_excel(writer, sheet_name='t2m', index=False)
-    e.to_excel(writer, sheet_name='e', index=False)
-
-# %% [markdown]
-# # Others
-
-# %%
-# for saving to excell
-# df = pd.concat([tp], ignore_index=True)
-
-
-# start_date = '2019-01-01 00:00:00'
-# end_date = '2022-01-01 00:00:00'
-# filtered_df = df[(df['Date'] >= start_date) & (df['Date'] <= end_date)]
-# # filtered_df
-
-
-# filtered_df = df
-
-# with pd.ExcelWriter('output.xlsx', mode='w') as writer:
-#     tp.to_excel(writer, sheet_name='tp', index=False)
-
-# %%
-# t2m = test1.extract_by_avering('t2m')
-# plt.figure(figsize=(10,  5))
-# plt.plot(t2m['Date'], t2m['t2m'])
-# plt.title('Temparature vs Date')
-# plt.xlabel('DateTime')
-# plt.ylabel('Temparature')
-
-# %%
-# n = 3050
-# df_21_24[n:n+5]
-
-# %%
-# plt.figure(figsize=(10,  5))
-# plt.plot(df_21_24['Date'], df_21_24['Subbasin-1'])
-# plt.title('Precipitation vs Date')
-# plt.xlabel('DateTime')
-# plt.ylabel('Precipitation')
-
-# start_date = '2021-01-01 00:00:00'
-# end_date = '2022-01-01 00:00:00'
-# filtered_df = df_21_24[(df_21_24['Date'] >= start_date) & (df_21_24['Date'] <= end_date)]
-# plt.figure(figsize=(10,  5))
-# plt.plot(df_21_24['Date'], df_21_24['Subbasin-1'])
-# plt.title('Evaporation vs Date')
-# plt.xlabel('DateTime')
-# plt.ylabel('Evaporation')
-
-# %%
-# test2 = Extracting_ERA5Data(
-#     r"C:\Users\User\Desktop\HEC-HMS\Hec-Hms Project\parameter\17-20.nc",
-#     r"C:\Users\User\Desktop\hechms\Sub-Basin(WGS).shp"
-# )
-# df_17_20 = test2.extract_variable('tp')
-# test1.create_plot(n_point=[5, 2], n_subBasin=1)
-# test1.create_plot(n_point=[5, 2], n_subBasin=1)
-
-# %%
-
-
-
